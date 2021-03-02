@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatDelegate;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -23,6 +24,7 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.example.izastavkanox.R;
 import com.squareup.picasso.MemoryPolicy;
 import com.squareup.picasso.NetworkPolicy;
@@ -92,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
         setContentView(R.layout.activity_main);
         Log.e("OnCreate", "Activity Recreated!!");
 
@@ -111,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (mDpm.isDeviceOwnerApp(getPackageName())) {
-                mDpm.setLockTaskPackages(deviceAdmin, new String[]{getPackageName()});
+//                mDpm.setLockTaskPackages(deviceAdmin, new String[]{getPackageName()});
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     mDpm.setKeyguardDisabled(deviceAdmin, true);
                 }
@@ -141,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                     Window window = getWindow();
                     window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
                     //TODO uncomment
-                    window.setStatusBarColor(Color.TRANSPARENT);
+//                    window.setStatusBarColor(getResources().getColor(Color.TRANSPARENT));
 
                     if (keypadHeight > screenHeight * 0.15) { // 0.15 ratio is perhaps enough to determine keypad height.
                         // keyboard is opened
@@ -545,8 +548,10 @@ public class MainActivity extends AppCompatActivity {
     public void loadBanner(){
 //        if (bannerURLs.size() > 0) {
 //            Picasso.get().load("http://10.0.230.1/images/" + bannerURLs.get(bannerNum)).into(bannerIV);
-        Picasso.get().load("https://www.dpmb.cz/img/srv/an-benesova-reklama.png").memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).networkPolicy(NetworkPolicy.NO_CACHE, NetworkPolicy.NO_STORE).into(bannerIV);
-//            if(bannerNum < bannerURLs.size()){
+//        Picasso.with(this).load("https://www.dpmb.cz/img/srv/an-benesova-reklama.png").memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).networkPolicy(NetworkPolicy.NO_CACHE, NetworkPolicy.NO_STORE).into(bannerIV);
+//        Picasso.with(this).load("https://www.dpmb.cz/img/srv/an-benesova-reklama.png").into(bannerIV);
+        Glide.with(this).load("https://www.dpmb.cz/img/srv/an-benesova-reklama.png").into(bannerIV);
+        //            if(bannerNum < bannerURLs.size()){
 //                bannerNum = 0;
 //            }else{
 //                bannerNum += 1;
