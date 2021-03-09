@@ -37,8 +37,9 @@ public class UnsafeOkHttpClient {
             sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
 
             // Create an ssl socket factory with our all-trusting manager
-            final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+//            final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
+            SSLSocketFactory sslSocketFactory = new TLSSocketFactory();
             OkHttpClient.Builder builder = new OkHttpClient.Builder();
             builder.sslSocketFactory(sslSocketFactory, (X509TrustManager)trustAllCerts[0]);
             builder.hostnameVerifier(new HostnameVerifier() {

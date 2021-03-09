@@ -29,11 +29,21 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-<!--            <meta-data-->
-<!--                android:name="cz.zemankrystof.izastavkanox.helpers.UnsafeOkHttpClient"-->
-<!--                android:value="GlideModule" />-->
+            <meta-data
+                android:name="cz.zemankrystof.izastavkanox.helpers.UnsafeOkHttpClient"
+                android:value="GlideModule" />
         </activity>
+
+        <receiver
+            android:name="cz.zemankrystof.izastavkanox.StartKioskAtBootReceiver"
+            android:label="StartKioskAtBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

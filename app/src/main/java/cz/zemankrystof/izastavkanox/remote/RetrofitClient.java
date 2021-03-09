@@ -12,7 +12,7 @@ public class RetrofitClient {
     private static Retrofit bannerRetrofit;
     public static final String BASE_URL = "https://api.flixbus.com/public/v1/network/station/11918/";
     public static final String RJ_URL = "https://brn-ybus-pubapi.sa.cz/restapi/routes/10204002/";
-    public static final String BANNER_URL = "http://10.0.230.1/images/";
+    public static final String BANNER_URL = "https://www.dpmb.cz/img/srv/";
 
     public static Retrofit getClient() {
         if (retrofit==null) {

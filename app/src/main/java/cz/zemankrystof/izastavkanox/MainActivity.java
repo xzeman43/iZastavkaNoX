@@ -1,12 +1,16 @@
 package cz.zemankrystof.izastavkanox;
 
+import android.app.DownloadManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -30,6 +34,13 @@ import com.squareup.picasso.MemoryPolicy;
 import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
 
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -53,6 +64,9 @@ import cz.zemankrystof.izastavkanox.remote.RJService;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+import static android.os.Environment.DIRECTORY_DOCUMENTS;
+import static android.os.Environment.DIRECTORY_DOWNLOADS;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -316,6 +330,8 @@ public class MainActivity extends AppCompatActivity {
                             do2 = getFlixDate(((FlixDeparture) t1).getDatetime().getTimestamp().toString());
                         }
                         Log.d("Comp", " Comparing: " + do1 + " and : " + do2);
+//                        if (do2) {
+//                        }
                         return Long.valueOf(do1).compareTo(Long.valueOf(do2));
 //                       return do1.compareTo(do2);
                     }
@@ -486,7 +502,8 @@ public class MainActivity extends AppCompatActivity {
         for (FlixDeparture dep:departures){
             Date depDate = new Date(dep.getDatetime().getTimestamp());
             //Log.d("Curr", "Time: " + now.getTime() + " DepTime: " + depDate.getTime());
-            if (depDate.getTime()*1000 > now.getTime()){
+            long flixTim = depDate.getTime()*1000;
+            if ((flixTim > now.getTime()) && (flixTim < (now.getTime() + 43200000))){
                 //Log.d("FILTER", "Adding filtered dep: " + depDate.getTime());
                 filtered.add(dep);
             }
@@ -499,12 +516,27 @@ public class MainActivity extends AppCompatActivity {
         for(RJStation stat: rjstations){
             String splitted[] = stat.getLabel().split(" ");
             List<String> split_list = Arrays.asList(splitted);
-            String direction = stat.getLabel().split(" ")[4];
-            direction = split_list.get(split_list.indexOf("→") + 1);
-            Log.d("Direction: ", direction);
-            if (!direction.toLowerCase().contains("brno")){
-                Log.d("Direction", "Adding to list " + direction);
-                listik.add(stat);
+            String directionTo = split_list.get(split_list.indexOf("→") + 1);
+            String directionFrom = split_list.get(split_list.indexOf("→") - 1);
+            Log.d("Direction: ", directionTo);
+            Date now = Calendar.getInstance().getTime();
+            if (!directionTo.toLowerCase().contains("brno")){
+                Log.d("Direction", "Adding to list " + directionTo);
+                if((directionFrom.equalsIgnoreCase("brno")) && stat.getConnectionStations().get(0).getStationId() != 10204002) {
+
+                }else{
+                    for(RJConnectionStation rjConnectionStation: stat.getConnectionStations()){
+                        if (rjConnectionStation.getStationId() == 10204002){
+                            Log.d("TIIIME", "Dep: " + getRJDate(rjConnectionStation.getDeparture()) + " Now: " + now.getTime());
+                            long rjTim = getRJDate(rjConnectionStation.getDeparture());
+                            if ((rjTim > now.getTime()) && (rjTim < (now.getTime() + 43200000))){
+
+                                listik.add(stat);
+                            }
+                        }
+                    }
+
+                }
             }
         }
 
@@ -546,11 +578,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void loadBanner(){
+//        DownloadManager downloadManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+//        Uri uri = Uri.parse("https://www.dpmb.cz/img/srv/an-benesova-reklama.png");
+            new DownloadBannerAsyncTask().execute();
+//        DownloadManager.Request request = new DownloadManager.Request(uri);
+//        request.setTitle("Banner");
+//        request.setDescription("Downloading.");
+//        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
+//        request.setVisibleInDownloadsUi(false);
+//        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "banner");
+//        downloadManager.enqueue(request);
 //        if (bannerURLs.size() > 0) {
 //            Picasso.get().load("http://10.0.230.1/images/" + bannerURLs.get(bannerNum)).into(bannerIV);
 //        Picasso.with(this).load("https://www.dpmb.cz/img/srv/an-benesova-reklama.png").memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).networkPolicy(NetworkPolicy.NO_CACHE, NetworkPolicy.NO_STORE).into(bannerIV);
 //        Picasso.with(this).load("https://www.dpmb.cz/img/srv/an-benesova-reklama.png").into(bannerIV);
-        Glide.with(this).load("https://www.dpmb.cz/img/srv/an-benesova-reklama.png").into(bannerIV);
+//        Glide.with(this).load("https://www.dpmb.cz/img/srv/an-benesova-reklama.png").into(bannerIV);
         //            if(bannerNum < bannerURLs.size()){
 //                bannerNum = 0;
 //            }else{
@@ -558,4 +600,58 @@ public class MainActivity extends AppCompatActivity {
 //            }
 //        }
     }
+
+    private class DownloadBannerAsyncTask extends AsyncTask<String, Integer, String> {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            DownloadBanner();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            Glide.with(getApplicationContext()).load(getExternalFilesDir(DIRECTORY_DOWNLOADS).getAbsolutePath() + "/../" + "/banner/banner.png").into(bannerIV);
+        }
+    }
+
+    public void DownloadBanner(){
+
+        try {
+            URL u = new URL("https://www.dpmb.cz/img/srv/an-benesova-reklama.png");
+            InputStream is = u.openStream();
+
+            DataInputStream dis = new DataInputStream(is);
+
+            byte[] buffer = new byte[1024];
+            int length;
+
+            String path = getExternalFilesDir(DIRECTORY_DOWNLOADS).getAbsolutePath();
+            File file = new File( path + "/../" + "/banner");
+            if(!file.exists()){
+                file.mkdirs();
+                Log.d("FILE", "CREATED " + file.getAbsolutePath());
+            }
+            File banner = new File(file.getAbsolutePath() + "/banner.png");
+            if (banner.exists() != true){
+                banner.createNewFile();
+            }else {
+                banner.delete();
+                banner.createNewFile();
+            }
+            FileOutputStream fos = new FileOutputStream(banner);
+            while ((length = dis.read(buffer))>0) {
+                fos.write(buffer, 0, length);
+            }
+
+        } catch (MalformedURLException mue) {
+            Log.e("SYNC getUpdate", "malformed url error", mue);
+        } catch (IOException ioe) {
+            Log.e("SYNC getUpdate", "io error " + ioe.getMessage());
+        } catch (SecurityException se) {
+            Log.e("SYNC getUpdate", "security error", se);
+        }
+    }
+
 }

@@ -2,13 +2,13 @@ package cz.zemankrystof.izastavkanox.helpers;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.Registry;
 import com.bumptech.glide.annotation.GlideModule;
 import com.bumptech.glide.load.model.GlideUrl;
 import com.bumptech.glide.module.AppGlideModule;
-import com.bumptech.glide.module.LibraryGlideModule;
 
 import java.io.InputStream;
 
@@ -20,6 +20,7 @@ public class UnsafeOkHttpGlideModule extends AppGlideModule {
     @Override
     public void registerComponents(@NonNull Context context, @NonNull Glide glide, @NonNull Registry registry) {
         OkHttpClient okHttpClient= UnsafeOkHttpClient.getUnsafeOkHttpClient();
+        Log.d("GLIDE", "Registering unsafe client");
         registry.replace(GlideUrl.class, InputStream.class, new OkHttpUrlLoader.Factory(okHttpClient));
     }
 }

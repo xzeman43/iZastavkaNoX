@@ -6,6 +6,6 @@ import retrofit2.http.GET;
 
 public interface BannerService {
 
-    @GET("list.txt")
+    @GET("an-benesova-reklama.png")
     Call<ResponseBody> getBannerList();
 }
