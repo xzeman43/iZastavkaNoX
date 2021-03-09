@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -61,6 +62,7 @@ import cz.zemankrystof.izastavkanox.remote.ApiUtils;
 import cz.zemankrystof.izastavkanox.remote.BannerService;
 import cz.zemankrystof.izastavkanox.remote.FlixService;
 import cz.zemankrystof.izastavkanox.remote.RJService;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -569,7 +571,7 @@ public class MainActivity extends AppCompatActivity {
                 public void run() {
                     Log.d("MainActivity", "Starting the Banner handler");
 //                    DownloadBannerList();
-                    loadBanner();
+                    downloadBanner();
                     loadBannerHandler.postDelayed(loadBannerRunnable, 57600000);
                 }
             };
@@ -578,9 +580,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void loadBanner(){
+        Glide.with(this).load(getExternalFilesDir(null) + File.separator + "banner.png").into(bannerIV);
+    }
 //        DownloadManager downloadManager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
 //        Uri uri = Uri.parse("https://www.dpmb.cz/img/srv/an-benesova-reklama.png");
-            new DownloadBannerAsyncTask().execute();
 //        DownloadManager.Request request = new DownloadManager.Request(uri);
 //        request.setTitle("Banner");
 //        request.setDescription("Downloading.");
@@ -599,59 +602,85 @@ public class MainActivity extends AppCompatActivity {
 //                bannerNum += 1;
 //            }
 //        }
-    }
 
-    private class DownloadBannerAsyncTask extends AsyncTask<String, Integer, String> {
+    public void downloadBanner() {
+        bannerService.getBanner().enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.isSuccessful()) {
+                    Log.d("BANNER", "server contacted and has file");
 
-        @Override
-        protected String doInBackground(String... strings) {
-            DownloadBanner();
-            return null;
-        }
+                    new AsyncTask<Void, Void, Void>() {
+                        @Override
+                        protected Void doInBackground(Void... voids) {
+                            boolean writtenToDisk = writeResponseBodyToDisk(response.body());
 
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            Glide.with(getApplicationContext()).load(getExternalFilesDir(DIRECTORY_DOWNLOADS).getAbsolutePath() + "/../" + "/banner/banner.png").into(bannerIV);
-        }
-    }
+                            Log.d("BANNER", "file download was a success? " + writtenToDisk);
+                            return null;
+                        }
 
-    public void DownloadBanner(){
-
-        try {
-            URL u = new URL("https://www.dpmb.cz/img/srv/an-benesova-reklama.png");
-            InputStream is = u.openStream();
-
-            DataInputStream dis = new DataInputStream(is);
-
-            byte[] buffer = new byte[1024];
-            int length;
-
-            String path = getExternalFilesDir(DIRECTORY_DOWNLOADS).getAbsolutePath();
-            File file = new File( path + "/../" + "/banner");
-            if(!file.exists()){
-                file.mkdirs();
-                Log.d("FILE", "CREATED " + file.getAbsolutePath());
-            }
-            File banner = new File(file.getAbsolutePath() + "/banner.png");
-            if (banner.exists() != true){
-                banner.createNewFile();
-            }else {
-                banner.delete();
-                banner.createNewFile();
-            }
-            FileOutputStream fos = new FileOutputStream(banner);
-            while ((length = dis.read(buffer))>0) {
-                fos.write(buffer, 0, length);
+                        @Override
+                        protected void onPostExecute(Void aVoid) {
+                            loadBanner();
+                        }
+                    }.execute();
+                }
             }
 
-        } catch (MalformedURLException mue) {
-            Log.e("SYNC getUpdate", "malformed url error", mue);
-        } catch (IOException ioe) {
-            Log.e("SYNC getUpdate", "io error " + ioe.getMessage());
-        } catch (SecurityException se) {
-            Log.e("SYNC getUpdate", "security error", se);
-        }
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+            }
+        });
     }
 
+        private boolean writeResponseBodyToDisk(ResponseBody body) {
+            try {
+                // todo change the file location/name according to your needs
+                File banner = new File(getExternalFilesDir(null) + File.separator + "banner.png");
+
+                InputStream inputStream = null;
+                OutputStream outputStream = null;
+
+                try {
+                    byte[] fileReader = new byte[4096];
+
+                    long fileSize = body.contentLength();
+                    long fileSizeDownloaded = 0;
+
+                    inputStream = body.byteStream();
+                    outputStream = new FileOutputStream(banner);
+
+                    while (true) {
+                        int read = inputStream.read(fileReader);
+
+                        if (read == -1) {
+                            break;
+                        }
+
+                        outputStream.write(fileReader, 0, read);
+
+                        fileSizeDownloaded += read;
+
+                        Log.d("BANNER", "file download: " + fileSizeDownloaded + " of " + fileSize);
+                    }
+
+                    outputStream.flush();
+
+                    return true;
+                } catch (IOException e) {
+                    return false;
+                } finally {
+                    if (inputStream != null) {
+                        inputStream.close();
+                    }
+
+                    if (outputStream != null) {
+                        outputStream.close();
+                    }
+                }
+            } catch (IOException e) {
+                return false;
+            }
+        }
 }
